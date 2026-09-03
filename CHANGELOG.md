@@ -11,3 +11,4 @@
 ## 1.0.1 - 2026-09-03
 
 - Rename Firefly, Kerbalism, Distant Object and PlanetShine body nodes even when the consumer mod is not installed (the nodes exist anyway; `check_cache.py` reported them as leftovers).
+- Remove the stock-Kerbin bases shipped by Kerbin Side Remastered and Ordinary Konstruction Co (their models are used by JNSQ-Reborn, their placements assume the stock Kerbin); `--gamedata` option to read the groups from the installed packs.

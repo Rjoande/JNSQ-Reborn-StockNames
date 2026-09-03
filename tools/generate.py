@@ -41,6 +41,23 @@ JNSQ_CLASSIC_KK_GROUPS = [
 ]
 
 
+# Kerbal Konstructs groups placed on the *stock* Kerbin by the static packs that
+# JNSQ-Reborn uses for its models. Those placements are meaningless on JNSQ's Kerbin
+# (JNSQ-Reborn re-places what it needs); with plain JNSQ-Reborn they are dead because
+# the body "Kerbin" does not exist, so they are removed to keep the same result.
+# "Ungrouped" (Kerbal Konstructs' default group for player-placed statics) is never touched.
+STOCK_KERBIN_PACK_GROUPS = {
+    "KerbinSideRemastered": [
+        "Anomalies", "Anomalies_1", "Cape", "DesertAirfield", "Desert_Airfield_Builtin", "Dununda",
+        "DustyIsland", "Harvester", "HazardShallows", "JebBarn", "KSC2", "KSCUpgrades", "KamberwickGreen",
+        "KermanAtoll", "KermanAtoll_0", "KojaveSands", "KolaIsland", "MeedaBase", "NyeIsland",
+        "Research_Alpha", "RoundRange", "SandyIsland", "SaveGame", "SouthField", "SouthLake",
+        "SouthReserch", "TOPSECRET", "UberDam", "anomaly3", "anomaly_1",
+    ],
+    "OrdinaryKonstruction": ["IslandAirfield_Builtin"],
+}
+
+
 def walk_cfgs(root):
     for dp, _dn, fn in os.walk(root):
         for f in sorted(fn):
@@ -74,7 +91,7 @@ def is_prefixed(name):
         and name[len(PREFIX) + 1:len(PREFIX) + 2].islower()
 
 
-def collect(reborn, jnsq):
+def collect(reborn, jnsq, gamedata=None):
     d = {}
     bodies = {}   # JNSQKerbin -> Kerbin
     ref = {}      # JNSQMun -> referenceBody (raw)
@@ -198,6 +215,17 @@ def collect(reborn, jnsq):
     if not groups:
         groups = list(JNSQ_CLASSIC_KK_GROUPS)
     d["kk_groups"] = groups
+    # stock-Kerbin placements of the static packs (Kerbin Side Remastered, Ordinary Konstruction Co)
+    pack_groups = set()
+    for folder, fallback in STOCK_KERBIN_PACK_GROUPS.items():
+        pack_groups.update(fallback)
+        if gamedata and os.path.isdir(os.path.join(gamedata, folder)):
+            for path in walk_cfgs(os.path.join(gamedata, folder)):
+                for n in parse_file(path).find("KK_GroupCenter", "KK_MapDecal", "Instances"):
+                    g = n.get("Group")
+                    if g and g != "Ungrouped":
+                        pack_groups.add(g)
+    d["pack_groups"] = sorted(pack_groups - set(groups))
     return d
 
 
@@ -492,6 +520,17 @@ def gen_dedupe(d):
         for g in d["kk_groups"]:
             e.line(f"!{top}:HAS[#CelestialBody[Kerbin],#Group[{g}]]:{NEEDS}:FINAL {{}}")
     e.line()
+    e.line("// Static packs used by JNSQ-Reborn for its models (Kerbin Side Remastered, Ordinary")
+    e.line("// Konstruction Co) also ship bases placed on the stock Kerbin; JNSQ-Reborn re-places")
+    e.line("// what it needs, so those placements are removed (\"Ungrouped\" is never touched).")
+    e.open(f"@STATIC:{NEEDS}:FINAL")
+    for g in d["pack_groups"]:
+        e.line(f"!Instances:HAS[#CelestialBody[Kerbin],#Group[{g}]],* {{}}")
+    e.close()
+    for top in ("KK_GroupCenter", "KK_MapDecal"):
+        for g in d["pack_groups"]:
+            e.line(f"!{top}:HAS[#CelestialBody[Kerbin],#Group[{g}]]:{NEEDS}:FINAL {{}}")
+    e.line()
     e.line("// MechJeb landing sites/runways shipped by classic JNSQ (JNSQ/JNSQ_Configs/MechJeb2.cfg)")
     e.line(f"!MechJeb2Landing:HAS[@LandingSites:HAS[@Site:HAS[#name[KSC?Pad],#body[Kerbin]]]]:{NEEDS}:FINAL {{}}")
     e.line()
@@ -532,12 +571,13 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--reborn", required=True, help="path to GameData/JNSQ-Reborn")
     ap.add_argument("--jnsq", default=None, help="path to GameData/JNSQ (classic); optional, used for the KK dedupe list")
+    ap.add_argument("--gamedata", default=None, help="path to GameData; optional, used to read the groups of installed static packs (KSR, OKC)")
     ap.add_argument("--out", default=None, help="output folder (default: <repo>/GameData/JNSQ-Reborn-StockNames)")
     a = ap.parse_args()
     out = a.out or os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                                 "GameData", "JNSQ-Reborn-StockNames")
     os.makedirs(out, exist_ok=True)
-    d = collect(a.reborn, a.jnsq)
+    d = collect(a.reborn, a.jnsq, a.gamedata)
     files = {
         "00_DedupeLeftovers.cfg": gen_dedupe(d),
         "01_StockNames.cfg": gen_stocknames(d),
@@ -551,7 +591,7 @@ def main():
     print(f"shadows: {len(d['shadows'])}, scatterer items: {len(d['scatterer_items'])}, "
           f"light sources: {len(d['scatterer_lights'])}, researchbodies keys: "
           f"{len(d['researchbodies']['ondiscovery'])}/{len(d['researchbodies']['ignorelevels'])}, "
-          f"firefly: {len(d['firefly'])}, kerbalism: {len(d['kerbalism'])}, kk groups: {len(d['kk_groups'])}")
+          f"firefly: {len(d['firefly'])}, kerbalism: {len(d['kerbalism'])}, kk groups: {len(d['kk_groups'])} + {len(d['pack_groups'])} pack groups")
 
 
 if __name__ == "__main__":
