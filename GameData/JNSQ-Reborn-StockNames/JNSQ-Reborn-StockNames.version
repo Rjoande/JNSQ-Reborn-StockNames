@@ -1,0 +1,9 @@
+{
+	"NAME": "JNSQ-Reborn-StockNames",
+	"URL": "https://raw.githubusercontent.com/rjoande/JNSQ-Reborn-StockNames/main/GameData/JNSQ-Reborn-StockNames/JNSQ-Reborn-StockNames.version",
+	"DOWNLOAD": "https://github.com/rjoande/JNSQ-Reborn-StockNames/releases",
+	"VERSION": { "MAJOR": 1, "MINOR": 0, "PATCH": 0, "BUILD": 0 },
+	"KSP_VERSION": { "MAJOR": 1, "MINOR": 12, "PATCH": 5 },
+	"KSP_VERSION_MIN": { "MAJOR": 1, "MINOR": 12, "PATCH": 0 },
+	"KSP_VERSION_MAX": { "MAJOR": 1, "MINOR": 12, "PATCH": 99 }
+}
