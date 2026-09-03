@@ -48,9 +48,14 @@ def main():
             continue
         if "JNSQ" not in s or s.startswith("//"):
             continue
-        for tok in TOKEN.findall(s):
+        for mt in TOKEN.finditer(s):
+            tok = mt.group(0)
             if tok in ALLOW:
                 continue
+            before = s[mt.start() - 1:mt.start()]
+            after = s[mt.end():mt.end() + 1]
+            if before in ("/", "_") or after in ("/", "_", "."):
+                continue  # file path or texture name, not a body reference
             leftovers[tok] += 1
             where[tok][current] += 1
     if leftovers:
@@ -69,6 +74,10 @@ def main():
     kerbin_rot = None
     atmos = Counter()
     oceans = Counter()
+    atmo_other = Counter()
+    ocean_other = Counter()
+    reborn_bodies = set()
+    n_atmo_nodes = 0
     eve_objects = Counter()
     kk_instances = Counter()
     scat_items = Counter()
@@ -78,17 +87,24 @@ def main():
             if k == "Kopernicus":
                 for b in node.nodes("Body"):
                     bodies[b.get("name")] += 1
+                    if b.get("JNSQRebornTag"):
+                        reborn_bodies.add(b.get("name"))
                     if b.get("name") == "Kerbin":
                         for pr in b.nodes("Properties"):
                             kerbin_rot = pr.get("initialRotation")
             elif k == "Kopernicus_config":
                 home = node.get("HomeWorldName")
             elif k == "Scatterer_atmosphere":
+                n_atmo_nodes += 1
                 for a in node.nodes("Atmo"):
                     atmos[a.get("name")] += 1
+                    if not a.get("JNSQRebornTag"):
+                        atmo_other[a.get("name")] += 1
             elif k == "Scatterer_ocean":
                 for a in node.nodes("Ocean"):
                     oceans[a.get("name")] += 1
+                    if not a.get("JNSQRebornTag"):
+                        ocean_other[a.get("name")] += 1
             elif k == "Scatterer_planetsList":
                 for lst in node.nodes("scattererCelestialBodies"):
                     for it in lst.nodes("Item"):
@@ -108,13 +124,18 @@ def main():
     dup(bodies, "Kopernicus Body nodes per name")
     print(f"  HomeWorldName = {home}")
     print(f"  Kerbin initialRotation = {kerbin_rot}")
-    dup(atmos, "Scatterer Atmo per name")
-    dup(oceans, "Scatterer Ocean per name")
+    print(f"  JNSQ-Reborn bodies (JNSQRebornTag): {len(reborn_bodies)}")
+    print(f"  Scatterer_atmosphere nodes: {n_atmo_nodes} (patch-style configs, JNSQ-Reborn included, add their Atmo to every node, so {n_atmo_nodes} copies per name are normal)")
+    la = {n: c for n, c in atmo_other.items() if n in reborn_bodies}
+    lo = {n: c for n, c in ocean_other.items() if n in reborn_bodies}
+    print(f"  Scatterer Atmo of a Reborn body NOT coming from JNSQ-Reborn (leftovers): {la or None}")
+    print(f"  Scatterer Ocean of a Reborn body NOT coming from JNSQ-Reborn (leftovers): {lo or None}")
+    print(f"  Scatterer Atmo names: {len(atmos)}, Ocean names: {len(oceans)}")
     dup(scat_items, "Scatterer planetsList items per body")
     print(f"  EVE objects with duplicate (type, body, name): "
           f"{ {k: v for k, v in eve_objects.items() if v > 1} or 'none'}")
     print("  KK instances per body:", dict(kk_instances))
-    sys.exit(1 if leftovers else 0)
+    sys.exit(1 if (leftovers or la or lo) else 0)
 
 
 if __name__ == "__main__":

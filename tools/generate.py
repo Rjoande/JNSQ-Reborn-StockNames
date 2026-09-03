@@ -95,7 +95,9 @@ def collect(reborn, jnsq):
     prefixed = set(bodies)
 
     def m(v):
-        return bodies.get(v, v)
+        if v in bodies:
+            return bodies[v]
+        return v[len(PREFIX):] if is_prefixed(v) else v
 
     d["map"] = m
 
@@ -152,11 +154,11 @@ def collect(reborn, jnsq):
                 continue
             rb["name"] = top.get("name")
             for n in top.nodes("ONDISCOVERY"):
-                rb["ondiscovery"] = [k for k, _v in n.values if k in prefixed]
+                rb["ondiscovery"] = [k for k, _v in n.values if is_prefixed(k)]
             for n in top.nodes("IGNORE"):
                 rb["ignore"] = n.getall("body")
             for n in top.nodes("IGNORELEVELS"):
-                rb["ignorelevels"] = [k for k, _v in n.values if k in prefixed]
+                rb["ignorelevels"] = [k for k, _v in n.values if is_prefixed(k)]
     d["researchbodies"] = rb
 
     # Firefly / Kerbalism bodies defined by Reborn (needed for the dedupe patch)
@@ -214,7 +216,7 @@ def gen_stocknames(d):
     e.lines.append(HEADER.format(
         title="Rename JNSQ-Reborn bodies back to the stock internal names (:FINAL pass).",
         nb=len(bodies)).rstrip("\n"))
-    e.line("// Runs in :FINAL, i.e. after every JNSQ-Reborn patch (:FOR/:AFTER/:LAST[JNSQ-Reborn],")
+    e.line("// Runs in :FINAL, i.e. after every JNSQ-Reborn patch (:FOR/:AFTER/:FINAL,")
     e.line("// :AFTER[Kopernicus], :AFTER[ParallaxStock], :LAST[scattererJNSQ] ...). While patching,")
     e.line("// the bodies keep their JNSQ* names, so JNSQ-Reborn's own patches and its isolation")
     e.line("// from stock-named configs are unaffected; only the final database, the one the game")
@@ -446,7 +448,7 @@ def gen_dedupe(d):
     e = Emitter()
     bodies = d["bodies"]
     e.lines.append(HEADER.format(
-        title="Remove stock-named leftovers that JNSQ-Reborn replaces (:LAST[JNSQ-Reborn] pass).",
+        title="Remove stock-named leftovers that JNSQ-Reborn replaces (:FINAL pass, applied before the rename).",
         nb=len(bodies)).rstrip("\n"))
     e.line("// JNSQ-Reborn requires classic JNSQ to stay installed and relies on the fact that")
     e.line("// its stock-named configs (EVE eclipses, Scatterer atmospheres, Kerbal Konstructs")
@@ -455,21 +457,25 @@ def gen_dedupe(d):
     e.line("// twice (classic + Reborn). This file deletes them while the Reborn copies still")
     e.line("// carry their JNSQ* names, so only the leftovers match. The result is exactly the")
     e.line("// set of configs a plain JNSQ-Reborn install ends up with.")
+    e.line("//")
+    e.line("// It runs in :FINAL, right before 01_StockNames.cfg (ModuleManager applies :FINAL")
+    e.line("// patches in file order), so leftovers added by the late passes of other mods")
+    e.line("// (:LAST[...], patch-style Scatterer configs, ...) are caught as well.")
     e.line()
     for top in ("EVE_CLOUDS", "EVE_SHADOWS", "PQS_MANAGER", "EVE_WET_SURFACES_CONFIG", "EVE_CITY_LIGHTS"):
-        e.open(f"@{top}:{NEEDS}:LAST[JNSQ-Reborn]")
+        e.open(f"@{top}:{NEEDS}:FINAL")
         for j, s in bodies.items():
             e.line(f"!OBJECT:HAS[#body[{s}]],* {{}}")
         e.close()
-    e.open(f"@Scatterer_atmosphere:{NEEDS}:LAST[JNSQ-Reborn]")
+    e.open(f"@Scatterer_atmosphere:{NEEDS}:FINAL")
     for j, s in bodies.items():
         e.line(f"!Atmo[{s}] {{}}")
     e.close()
-    e.open(f"@Scatterer_ocean:{NEEDS}:LAST[JNSQ-Reborn]")
+    e.open(f"@Scatterer_ocean:{NEEDS}:FINAL")
     for j, s in bodies.items():
         e.line(f"!Ocean[{s}] {{}}")
     e.close()
-    e.open(f"@Scatterer_planetsList:{NEEDS}:LAST[JNSQ-Reborn]")
+    e.open(f"@Scatterer_planetsList:{NEEDS}:FINAL")
     e.open("@scattererCelestialBodies")
     for j, s in bodies.items():
         e.line(f"!Item:HAS[#celestialBodyName[{s}]],* {{}}")
@@ -478,25 +484,25 @@ def gen_dedupe(d):
     e.line()
     e.line("// Kerbal Konstructs: only the site groups shipped by classic JNSQ, so that statics")
     e.line("// placed by the player (or by other packs) on Kerbin are left alone.")
-    e.open(f"@STATIC:{NEEDS}:LAST[JNSQ-Reborn]")
+    e.open(f"@STATIC:{NEEDS}:FINAL")
     for g in d["kk_groups"]:
         e.line(f"!Instances:HAS[#CelestialBody[Kerbin],#Group[{g}]],* {{}}")
     e.close()
     for top in ("KK_GroupCenter", "KK_MapDecal"):
         for g in d["kk_groups"]:
-            e.line(f"!{top}:HAS[#CelestialBody[Kerbin],#Group[{g}]]:{NEEDS}:LAST[JNSQ-Reborn] {{}}")
+            e.line(f"!{top}:HAS[#CelestialBody[Kerbin],#Group[{g}]]:{NEEDS}:FINAL {{}}")
     e.line()
     e.line("// MechJeb landing sites/runways shipped by classic JNSQ (JNSQ/JNSQ_Configs/MechJeb2.cfg)")
-    e.line(f"!MechJeb2Landing:HAS[@LandingSites:HAS[@Site:HAS[#name[KSC?Pad],#body[Kerbin]]]]:{NEEDS}:LAST[JNSQ-Reborn] {{}}")
+    e.line(f"!MechJeb2Landing:HAS[@LandingSites:HAS[@Site:HAS[#name[KSC?Pad],#body[Kerbin]]]]:{NEEDS}:FINAL {{}}")
     e.line()
     if d["firefly"]:
         e.line("// Firefly: stock body configs superseded by JNSQ-Reborn/Configs/Firefly")
         for j in d["firefly"]:
-            e.line(f"!ATMOFX_BODY[{d['map'](j)}]:NEEDS[Firefly,JNSQ-Reborn]:LAST[JNSQ-Reborn] {{}}")
+            e.line(f"!ATMOFX_BODY[{d['map'](j)}]:NEEDS[Firefly,JNSQ-Reborn]:FINAL {{}}")
     if d["kerbalism"]:
         e.line("// Kerbalism: stock radiation bodies superseded by JNSQ-Reborn/Configs/Kerbalism.cfg")
         for j in d["kerbalism"]:
-            e.line(f"!RadiationBody[{d['map'](j)}]:NEEDS[Kerbalism,JNSQ-Reborn]:LAST[JNSQ-Reborn] {{}}")
+            e.line(f"!RadiationBody[{d['map'](j)}]:NEEDS[Kerbalism,JNSQ-Reborn]:FINAL {{}}")
     return e.text()
 
 
@@ -533,8 +539,8 @@ def main():
     os.makedirs(out, exist_ok=True)
     d = collect(a.reborn, a.jnsq)
     files = {
-        "00_StockNames.cfg": gen_stocknames(d),
-        "01_DedupeLeftovers.cfg": gen_dedupe(d),
+        "00_DedupeLeftovers.cfg": gen_dedupe(d),
+        "01_StockNames.cfg": gen_stocknames(d),
         "02_Fixes.cfg": FIXES,
     }
     for name, txt in files.items():
