@@ -376,11 +376,11 @@ def gen_stocknames(d):
     e.close()
     e.line()
 
-    # one-node-per-body configs
-    for top, needs in (("CelestialBodyColor", "DistantObject,JNSQ-Reborn"),
-                       ("PlanetshineCelestialBody", "PlanetShine,JNSQ-Reborn"),
-                       ("ATMOFX_BODY", "Firefly,JNSQ-Reborn"),
-                       ("RadiationBody", "Kerbalism,JNSQ-Reborn")):
+    # one-node-per-body configs (NEEDS only JNSQ-Reborn: the nodes exist even when the consumer mod is absent)
+    for top, needs in (("CelestialBodyColor", "JNSQ-Reborn"),
+                       ("PlanetshineCelestialBody", "JNSQ-Reborn"),
+                       ("ATMOFX_BODY", "JNSQ-Reborn"),
+                       ("RadiationBody", "JNSQ-Reborn")):
         for j, s in bodies.items():
             e.open(f"@{top}[{j}]:NEEDS[{needs}]:FINAL")
             e.line(f"@name = {s}")
