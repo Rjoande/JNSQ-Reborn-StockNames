@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1 - 2026-09-03
+
+- Rename Firefly, Kerbalism, Distant Object and PlanetShine body nodes even when the consumer mod is not installed (the nodes exist anyway; `check_cache.py` reported them as leftovers).
+- Remove the stock-Kerbin bases shipped by Kerbin Side Remastered and Ordinary Konstruction Co (their models are used by JNSQ-Reborn, their placements assume the stock Kerbin); `--gamedata` option to read the groups from the installed packs.
+
 ## 1.0.0 - 2026-09-03
 
 - First release, generated against JNSQ-Reborn v1.0.0 (31 prefixed bodies).
@@ -7,8 +12,3 @@
 - `01_StockNames.cfg`: rename of bodies and of every JNSQ-Reborn config keyed on them (`:FINAL`).
 - `02_Fixes.cfg`: re-applies the Kerbin `initialRotation` offset that JNSQ-Reborn's `OffsetTime.cfg` schedules in a pass that runs too early.
 - Tools: `generate.py`, `check_reborn.py`, `check_cache.py`.
-
-## 1.0.1 - 2026-09-03
-
-- Rename Firefly, Kerbalism, Distant Object and PlanetShine body nodes even when the consumer mod is not installed (the nodes exist anyway; `check_cache.py` reported them as leftovers).
-- Remove the stock-Kerbin bases shipped by Kerbin Side Remastered and Ordinary Konstruction Co (their models are used by JNSQ-Reborn, their placements assume the stock Kerbin); `--gamedata` option to read the groups from the installed packs.
