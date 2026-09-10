@@ -3,7 +3,7 @@
 Recommended sequence, based on how the two existing issues went (#4 "Strategia uses JNSQ(Body) names" was closed as completed with "i doubt this is something i can fix as i believe strategia grabs the internal names"; #5 on Waypoint Manager is open without a reply):
 
 1. Publish the standalone patch first (this release text), so the fix exists whatever happens upstream.
-2. Open the upstream issue (`docs/ISSUE.md`) linking to it, offering a PR. A bare PR that renames 3,460 lines is unlikely to be merged without that conversation, because it would break the careers of current Reborn users; the issue lets the author decide between a major version, an optional variant, or endorsing the external patch.
+2. Open the upstream issue (`docs/ISSUE.md`) linking to it, offering a PR. Done 2026-09-11: https://github.com/rbeap/JNSQ-Reborn/issues/7. A bare PR that renames 3,460 lines is unlikely to be merged without that conversation, because it would break the careers of current Reborn users; the issue lets the author decide between a major version, an optional variant, or endorsing the external patch.
 
 ---
 
@@ -33,4 +33,4 @@ The three `.cfg` files are generated (`tools/generate.py`); `tools/check_reborn.
 
 ## Forum post (short)
 
-**[1.12.x] JNSQ-Reborn-StockNames 1.0.1**: a ModuleManager patch that gives JNSQ-Reborn's bodies their stock internal names back (`Kerbin` instead of `JNSQKerbin`). With plain JNSQ-Reborn, everything keyed on internal body names silently stops matching: science result texts (stock and modded), Contract Configurator packs, Kerbal Konstructs statics, NavInstruments, SpaceDust, Strategia, Waypoint Manager, Final Frontier, saves. The patch runs in `:FINAL`, after JNSQ-Reborn's own patches, so JNSQ-Reborn itself is untouched and behaves as designed; only the final database carries the stock names. Do not install it on a career already started on JNSQ-Reborn. Download, README and tools: <link>. Upstream discussion: <issue link>.
+**[1.12.x] JNSQ-Reborn-StockNames 1.0.1**: a ModuleManager patch that gives JNSQ-Reborn's bodies their stock internal names back (`Kerbin` instead of `JNSQKerbin`). With plain JNSQ-Reborn, everything keyed on internal body names silently stops matching: science result texts (stock and modded), Contract Configurator packs, Kerbal Konstructs statics, NavInstruments, SpaceDust, Strategia, Waypoint Manager, Final Frontier, saves. The patch runs in `:FINAL`, after JNSQ-Reborn's own patches, so JNSQ-Reborn itself is untouched and behaves as designed; only the final database carries the stock names. Do not install it on a career already started on JNSQ-Reborn. Download, README and tools: https://github.com/Rjoande/JNSQ-Reborn-StockNames (release: https://github.com/Rjoande/JNSQ-Reborn-StockNames/releases/tag/v1.0.1). Upstream discussion: https://github.com/rbeap/JNSQ-Reborn/issues/7.
