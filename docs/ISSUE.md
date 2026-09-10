@@ -37,3 +37,29 @@ Everything else the prefix touched was cost, not benefit: 2447 `CelestialBody` l
 - Kerbin's coasts glow white/pink at low sun in flight (not in map view). Two things add up: `Configs/Parallax/Terrain.cfg` keeps the stock Parallax sand band (`_LowMidBlendStart/End` 30/60 m) and the stock broad specular (`_SpecularPower 5`, `_FresnelPower 0.8`), and on JNSQ's flat coastal plains that paints hundreds of metres of bright sand along every shore; `Configs/Scatterer/Planets/Oceans.cfg` gives Kerbin `transparencyDepth = 100` (classic JNSQ: 10) and `shoreFoam = 1`, so the sandy seabed and the foam make a bright band on the sea side too. On my install a `:FINAL` patch with `_LowMidBlendStart/End` 3/10, `_SpecularIntensity` 0.06, `_FresnelPower` 3, `transparencyDepth` 25 and `shoreFoam` 0.3 removes the glow; the exact values are a matter of taste, the direction is what matters.
 
 Thanks for reading, and again for the mod.
+
+---
+
+## Follow-up comment posted 2026-09-11 (phantom NavInstruments runways)
+
+https://github.com/rbeap/JNSQ-Reborn/issues/7#issuecomment-5626639880
+
+One more thing found on the way, about NavInstruments (NavUtilities Continued) ILS runways. Reborn's `Configs/KK/NavUltRunways.cfg` covers every runway of the new bases (thanks for that, both ends each), but with the packs Reborn requires, the loaded runway list also contains entries for bases that do not exist on Reborn's Kerbin:
+
+- **54 runways at stock-Kerbin coordinates.** NavInstruments ships `ModuleManagerCfgs/KerbinSideRemastered.cfg`, gated on `:NEEDS[KerbinSideRemastered]`. Since Reborn needs the KSR folder for its models, that file loads and adds Baikerbanur, Cape Kerman, Kojave Sands, Kerman Atoll, etc. at their stock positions, which on JNSQ fall in the open sea or in the middle of nowhere. Same logic for the Ordinary Konstruction "Island" airfield and Tundra Space Center: `ModuleManagerCfgs/JNSQ.cfg` has `Island ILS 09/27` (1.5° S, 71.9° W) and `TSC ILS 09/27` (13.6° S, 51.6° E) with no base there under Reborn.
+- **KSC 09/27 twice.** NavInstruments' `JNSQ.cfg` (still active, classic JNSQ being required) has `KSC ILS 09/27` and Reborn adds `KSC 09/27`. Measured against the runway (91°50'47" W to 91°46'06" W at 0°01'04" N), the NavInstruments pair puts the glideslope touchdown before the threshold (32 m short on 09, 263 m short on 27) while Reborn's pair lands on the runway (255 m and 22 m past the threshold), so Reborn's entries are the ones to keep; the 27 touchdown might deserve another ~250 m.
+- `Xennone Nat'l Lab 03` has no `21` counterpart, while the KK launch site is "Runway 21".
+
+Since Reborn already owns a NavInstruments file and requires those packs, it could carry the cleanup itself. What I use, in `:FINAL` (spaces in `:HAS` values must be `?`):
+
+```
+!Runway:HAS[#ident[Baikerbanur*]]:NEEDS[NavInstruments]:FINAL {}
+!Runway:HAS[#ident[Cape?Kerman*]]:NEEDS[NavInstruments]:FINAL {}
+// ... one line per KSR base prefix (Desert?Airfield, Dununda, Harvester, Hazard, Jeb?s?Junkyard,
+// Kamberwick, Kerman?Atoll, Kermundsen, Kojave?Sands, Kola?Island, Meeda, Nye, Polar, Round,
+// Sandy?Island, South?Field, South?Lake, TSC, Ubderdam, Uberdam, XXX) ...
+!Runway:HAS[#ident[Island?ILS*]]:NEEDS[NavInstruments]:FINAL {}
+!Runway:HAS[#ident[KSC?ILS*]]:NEEDS[NavInstruments]:FINAL {}
+```
+
+With that, the ConfigCache goes from 221 `Runway` nodes to 161, all of them on bases that exist. Not related to the naming question, just reporting it while I have the numbers at hand.
